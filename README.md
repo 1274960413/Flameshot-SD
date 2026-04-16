@@ -95,6 +95,7 @@
 - In-app screenshot editing.
 - DBus interface.
 - Upload to Imgur.
+- **Pin from clipboard** - Pin images and text from clipboard to screen (New!).
 
 ## Usage
 
@@ -145,6 +146,12 @@ Example commands:
 
     ```shell
     flameshot screen -n 1 -c
+    ```
+
+- Pin clipboard content (image or text) to screen (New!):
+
+    ```shell
+    flameshot pin
     ```
 
 In case of doubt choose the first or the second command as shortcut in your favorite desktop environment.

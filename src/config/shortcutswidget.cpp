@@ -220,6 +220,7 @@ void ShortcutsWidget::loadShortcuts()
                                       << "Print Screen");
     }
     appendShortcut("TAKE_SCREENSHOT", tr("Capture screen"));
+    appendShortcut("PIN_CLIPBOARD", tr("Pin clipboard content to screen"));
 #ifdef ENABLE_IMGUR
     m_shortcuts << (QStringList() << "" << QObject::tr("Screenshot history")
                                   << "Shift+Print Screen");

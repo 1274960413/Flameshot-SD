@@ -19,6 +19,9 @@ public:
                        const QRect& geometry,
                        QWidget* parent = nullptr);
 
+    // Create a PinWidget from clipboard content (image or text)
+    static PinWidget* createFromClipboard(QWidget* parent = nullptr);
+
 protected:
     void mouseDoubleClickEvent(QMouseEvent*) override;
     void mousePressEvent(QMouseEvent*) override;

@@ -7,10 +7,15 @@
 #include "utils/globalvalues.h"
 #include "utils/screenshotsaver.h"
 
+#include <QApplication>
+#include <QClipboard>
+#include <QFontMetrics>
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsOpacityEffect>
 #include <QLabel>
 #include <QMenu>
+#include <QMimeData>
+#include <QPainter>
 #include <QPinchGesture>
 #include <QScreen>
 #include <QShortcut>
@@ -335,4 +340,97 @@ void PinWidget::saveToFile()
     hide();
     saveToFilesystemGUI(m_pixmap);
     show();
+}
+
+PinWidget* PinWidget::createFromClipboard(QWidget* parent)
+{
+    QClipboard* clipboard = QApplication::clipboard();
+    const QMimeData* mimeData = clipboard->mimeData();
+
+    QPixmap pixmap;
+    QRect geometry;
+
+    // Try to get image from clipboard
+    if (mimeData->hasImage()) {
+        QVariant imageData = mimeData->imageData();
+        if (imageData.canConvert<QPixmap>()) {
+            pixmap = imageData.value<QPixmap>();
+        } else if (imageData.canConvert<QImage>()) {
+            pixmap = QPixmap::fromImage(imageData.value<QImage>());
+        }
+    }
+    // Try to load image from file URLs
+    else if (mimeData->hasUrls()) {
+        for (const QUrl& url : mimeData->urls()) {
+            if (url.isLocalFile()) {
+                QString filePath = url.toLocalFile();
+                if (pixmap.load(filePath)) {
+                    break;
+                }
+            }
+        }
+    }
+    // Try to get text and render it as image
+    else if (mimeData->hasText()) {
+        QString text = mimeData->text();
+        if (!text.isEmpty()) {
+            // Create a simple text image with multi-line support
+            QFont font("Microsoft YaHei", 12);
+            QFontMetrics fm(font);
+            int padding = 20;
+            int lineSpacing = 5; // Space between lines
+            int maxWidth = 600;  // Maximum width for text wrapping
+            
+            // Split text into lines
+            QStringList lines = text.split('\n');
+            
+            // Calculate dimensions
+            int textWidth = 0;
+            for (const QString& line : lines) {
+                int lineWidth = fm.horizontalAdvance(line);
+                if (lineWidth > textWidth) {
+                    textWidth = lineWidth;
+                }
+            }
+            // Limit width and wrap if necessary
+            if (textWidth > maxWidth) {
+                textWidth = maxWidth;
+            }
+            
+            int lineHeight = fm.height() + lineSpacing;
+            int textHeight = lines.count() * lineHeight - lineSpacing;
+            
+            pixmap = QPixmap(textWidth + padding * 2, textHeight + padding * 2);
+            pixmap.fill(Qt::white);
+
+            QPainter painter(&pixmap);
+            painter.setFont(font);
+            painter.setPen(Qt::black);
+            
+            // Draw each line
+            int y = padding + fm.ascent();
+            for (const QString& line : lines) {
+                painter.drawText(padding, y, line);
+                y += lineHeight;
+            }
+            painter.end();
+        }
+    }
+
+    if (pixmap.isNull()) {
+        return nullptr;
+    }
+
+    // Calculate geometry - center on current screen
+    QScreen* currentScreen = QGuiAppCurrentScreen().currentScreen();
+    if (!currentScreen) {
+        currentScreen = QApplication::primaryScreen();
+    }
+
+    QRect screenGeometry = currentScreen->geometry();
+    int x = screenGeometry.center().x() - pixmap.width() / 2;
+    int y = screenGeometry.center().y() - pixmap.height() / 2;
+    geometry = QRect(x, y, pixmap.width(), pixmap.height());
+
+    return new PinWidget(pixmap, geometry, parent);
 }

@@ -281,6 +281,9 @@ int main(int argc, char* argv[])
     CommandArgument screenArgument(
       QStringLiteral("screen"),
       QObject::tr("Capture a screenshot of the specified monitor."));
+    CommandArgument pinArgument(
+      QStringLiteral("pin"),
+      QObject::tr("Pin the clipboard content to the screen."));
 
     // Options
     CommandOption pathOption(
@@ -416,6 +419,7 @@ int main(int argc, char* argv[])
     parser.AddArgument(fullArgument);
     parser.AddArgument(launcherArgument);
     parser.AddArgument(configArgument);
+    parser.AddArgument(pinArgument);
     auto helpOption = parser.addHelpOption();
     auto versionOption = parser.addVersionOption();
     parser.AddOptions({ pathOption,
@@ -462,6 +466,11 @@ int main(int argc, char* argv[])
         reinitializeAsQApplication(argc, argv, translator, qtTranslator);
         Flameshot* flameshot = Flameshot::instance();
         flameshot->launcher();
+        qApp->exec();
+    } else if (parser.isSet(pinArgument)) { // PIN
+        reinitializeAsQApplication(argc, argv, translator, qtTranslator);
+        Flameshot* flameshot = Flameshot::instance();
+        flameshot->pinFromClipboard();
         qApp->exec();
     } else if (parser.isSet(guiArgument)) { // GUI
         reinitializeAsQApplication(argc, argv, translator, qtTranslator);

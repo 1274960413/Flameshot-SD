@@ -64,6 +64,9 @@ public slots:
 
     QVersionNumber getVersion();
 
+    // Pin clipboard content to screen
+    void pinFromClipboard();
+
 public:
     static void setOrigin(Origin origin);
     static Origin origin();
@@ -104,6 +107,7 @@ private:
 
 #if (defined(Q_OS_MACOS) || defined(Q_OS_WIN))
     QHotkey* m_HotkeyScreenshotCapture;
+    QHotkey* m_HotkeyPinClipboard;
 #endif
 #if (defined(Q_OS_MACOS) && ENABLE_IMGUR)
     QHotkey* m_HotkeyScreenshotHistory;

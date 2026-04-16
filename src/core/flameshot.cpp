@@ -45,6 +45,7 @@ constexpr const char* visibleInDockProperty = "_visibleInDock";
 #include "config/configresolver.h"
 #include "config/configwindow.h"
 #include "core/qguiappcurrentscreen.h"
+#include "tools/pin/pinwidget.h"
 #include "utils/abstractlogger.h"
 #include "utils/confighandler.h"
 #include "utils/screengrabber.h"
@@ -80,6 +81,7 @@ Flameshot::Flameshot()
   , m_captureWindow(nullptr)
 #if (defined(Q_OS_MACOS) || defined(Q_OS_WIN))
   , m_HotkeyScreenshotCapture(nullptr)
+  , m_HotkeyPinClipboard(nullptr)
 #endif
 #if (defined(Q_OS_MACOS) && ENABLE_IMGUR)
   , m_HotkeyScreenshotHistory(nullptr)
@@ -102,6 +104,27 @@ Flameshot::Flameshot()
                      &QHotkey::activated,
                      qApp,
                      [this]() { gui(); });
+
+    // Set global shortcut for pin from clipboard
+    QString pinShortcut = ConfigHandler().shortcut("PIN_CLIPBOARD");
+    qDebug() << "PIN_CLIPBOARD shortcut:" << pinShortcut;
+    if (!pinShortcut.isEmpty()) {
+        m_HotkeyPinClipboard = new QHotkey(
+          QKeySequence(pinShortcut), true, this);
+        if (m_HotkeyPinClipboard->isRegistered()) {
+            qDebug() << "PIN_CLIPBOARD hotkey registered successfully";
+            QObject::connect(m_HotkeyPinClipboard,
+                             &QHotkey::activated,
+                             qApp,
+                             [this]() { pinFromClipboard(); });
+        } else {
+            qWarning() << "Failed to register PIN_CLIPBOARD hotkey:" << pinShortcut;
+            delete m_HotkeyPinClipboard;
+            m_HotkeyPinClipboard = nullptr;
+        }
+    } else {
+        qWarning() << "PIN_CLIPBOARD shortcut is empty";
+    }
 #endif
 #if (defined(Q_OS_MACOS) && ENABLE_IMGUR)
     m_HotkeyScreenshotHistory = new QHotkey(
@@ -369,6 +392,16 @@ QVersionNumber Flameshot::getVersion()
 {
     return QVersionNumber::fromString(
       QStringLiteral(APP_VERSION).replace("v", ""));
+}
+
+void Flameshot::pinFromClipboard()
+{
+    PinWidget* pinWidget = PinWidget::createFromClipboard();
+    if (pinWidget) {
+        pinWidget->show();
+    } else {
+        AbstractLogger::info() << QObject::tr("No image or text in clipboard to pin.");
+    }
 }
 
 void Flameshot::setOrigin(Origin origin)
